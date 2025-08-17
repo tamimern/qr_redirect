@@ -845,6 +845,16 @@
       function saveLinksToStorage(arr) {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+          console.log('Data saved to localStorage backup:', arr);
+        } catch (e) {
+          console.error('Error saving to localStorage:', e);
+        }
+      }
+      
+      // Save links to localStorage as backup
+      function saveLinksToStorage(arr) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
           console.log('Data saved to localStorage backup');
         } catch (e) {
           console.error('Error saving to localStorage:', e);
@@ -986,15 +996,9 @@
       
       // Function to update the data file (for admin use)
       function updateDataFile(day, url) {
-        // Note: In a real web environment, this would update the server file
-        // For now, we'll just log the update and save to localStorage
         console.log(`Updating day ${day} with URL: ${url}`);
         
-        // In a real implementation, you would send this to your server
-        // For GitHub Pages, you'll need to manually update the data.json file
-        // or use a service like Netlify Functions or GitHub Actions
-        
-        // For now, we'll create a downloadable updated data file
+        // Create downloadable updated data file
         const updatedData = {
           wedding_date: "2025-09-10",
           last_updated: new Date().toISOString().split('T')[0],
@@ -1040,6 +1044,11 @@
             link.parentNode.removeChild(link);
           }
         }, 10000);
+        
+        // Also show a success message with instructions
+        setTimeout(() => {
+          alert(`💾 Link saved for Day ${day}!\n\n📥 A download link appeared above.\n\n🔧 To make it permanent:\n1. Download the file\n2. Replace your data.json with it\n3. Push to GitHub`);
+        }, 500);
       }
       
       // סרגל עזר למעלה
@@ -1067,28 +1076,35 @@
          return; 
        }
        
-               links[day-1] = url;
-        
-        // Save to localStorage as backup
-        saveLinksToStorage(links);
-        
-        // Update the JSON data structure
-        updateDataFile(day, url);
-        
-        render();
-        
-        // Clear inputs and show success
-        linkInput.value = '';
-        dayInput.value = '';
-        
-        // Animate the saved button
-        const savedButton = grid.children[day-1];
-        savedButton.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-          savedButton.style.transform = '';
-        }, 300);
-        
-        alert(`🎉 נשמר לינק ליום ${day}!`);
+       console.log(`Saving link for day ${day}: ${url}`);
+       
+       // Update the links array
+       links[day-1] = url;
+       
+       // Save to localStorage as backup
+       saveLinksToStorage(links);
+       
+       // Update the JSON data structure
+       updateDataFile(day, url);
+       
+       // Re-render to show the updated button
+       render();
+       
+       // Clear inputs
+       linkInput.value = '';
+       dayInput.value = '';
+       
+       // Animate the saved button
+       const savedButton = grid.children[day-1];
+       if (savedButton) {
+         savedButton.style.transform = 'scale(1.1)';
+         setTimeout(() => {
+           savedButton.style.transform = '';
+         }, 300);
+       }
+       
+       console.log('Current links after save:', links);
+       console.log('localStorage after save:', localStorage.getItem(STORAGE_KEY));
      });
      
      openBtn.addEventListener('click', () => {
