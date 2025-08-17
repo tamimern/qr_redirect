@@ -1019,7 +1019,13 @@
           const has = typeof links[i] === 'string' && links[i].trim().length>0;
           
                      btn.className = has ? 'day-button has-link' : 'day-button no-link';
-           btn.textContent = `יום ${i+1}`;
+                     // Calculate the date for this day (counting down from September 10th)
+                     const weddingDate = new Date('2025-09-10');
+const dayDate = new Date(weddingDate);
+dayDate.setDate(weddingDate.getDate() - (i)); // Fixed: just subtract the day number
+const dateStr = `${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
+
+btn.textContent = `יום ${i+1} - ${dateStr}`;
            btn.dataset.haslink = has ? "true" : "false";
            btn.dataset.day = i + 1; // Add day number for CSS targeting
            
