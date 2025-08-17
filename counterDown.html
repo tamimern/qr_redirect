@@ -854,13 +854,15 @@
            const doc = await docRef.get();
            
            if (doc.exists) {
-             const data = doc.data();
-             links = data.video_links || [...DEFAULT_LINKS];
-             dataLoaded = true;
-             console.log('✅ Data loaded from Firebase:', links);
+  const data = doc.data();
+  links = data.video_links || [...DEFAULT_LINKS];
+  customNames = data.custom_names || new Array(29).fill('');
+  dataLoaded = true;
+  console.log('✅ Data loaded from Firebase:', links);
+  console.log('✅ Custom names loaded from Firebase:', customNames);
              
              // Also save to localStorage as backup
-             saveLinksToStorage(links);
+             saveLinksToStorage(links, customNames);
            } else {
              // Document doesn't exist, create it with default data
              console.log('Creating new Firebase document with default data...');
@@ -877,12 +879,14 @@
        // Create default document in Firebase
        async function createDefaultFirebaseDocument() {
          try {
-           const defaultData = {
-             wedding_date: "2025-09-10",
-             last_updated: new Date().toISOString().split('T')[0],
-             video_links: DEFAULT_LINKS,
-             admin_password: "reut2025",
-             version: "1.0"
+          const defaultData = {
+  wedding_date: "2025-09-10",
+  last_updated: new Date().toISOString().split('T')[0],
+  video_links: DEFAULT_LINKS,
+  custom_names: new Array(29).fill(''),
+  admin_password: "reut2025",
+  version: "1.0"
+
            };
            
            await db.collection('omer_links').doc('main').set(defaultData);
@@ -894,31 +898,39 @@
        
        // Load links from localStorage as backup
        function loadLinksFromStorage() {
-         try {
-           const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-           if (Array.isArray(saved) && saved.length === 29) {
-             links = saved;
-             console.log('Data loaded from localStorage backup:', links);
-           } else {
-             links = [...DEFAULT_LINKS];
-             console.log('Using default links:', links);
-           }
-         } catch (e) {
-           links = [...DEFAULT_LINKS];
-           console.log('Error loading from localStorage, using defaults:', links);
-         }
-         dataLoaded = true;
-       }
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (saved && saved.links && Array.isArray(saved.links) && saved.links.length === 29) {
+      links = saved.links;
+      customNames = saved.customNames || new Array(29).fill('');
+      console.log('Data loaded from localStorage backup:', links);
+      console.log('Custom names loaded from localStorage backup:', customNames);
+    } else {
+      links = [...DEFAULT_LINKS];
+      customNames = new Array(29).fill('');
+      console.log('Using default links:', links);
+    }
+  } catch (e) {
+    links = [...DEFAULT_LINKS];
+    customNames = new Array(29).fill('');
+    console.log('Error loading from localStorage, using defaults:', links);
+  }
+  dataLoaded = true;
+}
       
       // Save links to localStorage as backup
-      function saveLinksToStorage(arr) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-          console.log('Data saved to localStorage backup:', arr);
-        } catch (e) {
-          console.error('Error saving to localStorage:', e);
-        }
-      }
+      function saveLinksToStorage(arr, names) {
+  try {
+    const dataToSave = {
+      links: arr,
+      customNames: names
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    console.log('Data saved to localStorage backup:', dataToSave);
+  } catch (e) {
+    console.error('Error saving to localStorage:', e);
+  }
+}
       
       // Calculate days until wedding
       function getDaysUntilWedding() {
@@ -1098,12 +1110,13 @@ btn.textContent = buttonText;
         try {
           // Create the updated data structure
           const updatedData = {
-            wedding_date: "2025-09-10",
-            last_updated: new Date().toISOString().split('T')[0],
-            video_links: links,
-            admin_password: "reut2025",
-            version: "1.0"
-          };
+  wedding_date: "2025-09-10",
+  last_updated: new Date().toISOString().split('T')[0],
+  video_links: links,
+  custom_names: customNames,
+  admin_password: "reut2025",
+  version: "1.0"
+};
           
           // Update Firebase document
           await db.collection('omer_links').doc('main').set(updatedData);
