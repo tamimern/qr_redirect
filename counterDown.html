@@ -201,10 +201,24 @@
     cursor: not-allowed;
   }
 
-  .day-button.no-link:hover {
-    transform: none;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  }
+     .day-button.no-link:hover {
+     transform: none;
+     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+   }
+   
+   /* Special styling for Day 1 (password protected) */
+   .day-button[data-day="1"] {
+     position: relative;
+   }
+   
+   .day-button[data-day="1"]::after {
+     content: '🔐';
+     position: absolute;
+     top: 5px;
+     right: 5px;
+     font-size: 0.8rem;
+     opacity: 0.8;
+   }
 
   /* Admin Section - Elegant Design */
   .admin-section {
@@ -695,9 +709,12 @@
         <button onclick="logoutAdmin()" class="toolbar-button logout">🚪 התנתקי</button>
       </div>
       
-      <p class="toolbar-tip">
-        💡 טיפ: אפשר לפתוח ישירות יום מסוים עם <code>?day=7</code> בסוף הכתובת
-      </p>
+             <p class="toolbar-tip">
+         💡 טיפ: אפשר לפתוח ישירות יום מסוים עם <code>?day=7</code> בסוף הכתובת
+       </p>
+               <p class="toolbar-tip" style="color: #dc3545; font-weight: 600;">
+          🔐 יום 1 מוגן בסיסמה: <code>AviGedalovitch1092025</code>
+        </p>
     </div>
 
     <!-- Day Buttons Grid -->
@@ -795,11 +812,14 @@
      ];
      
            // Data management - Load from JSON file and save to localStorage as backup
-      const DATA_FILE = "data.json";
-      const STORAGE_KEY = "reut_avi_omer_links_v3";
-      const ADMIN_PASSWORD = "reut2025"; // סיסמה מעודכנת
-      const ADMIN_KEY = "admin_logged_in";
-      const WEDDING_DATE = new Date('2025-09-10');
+             const DATA_FILE = "data.json";
+       const STORAGE_KEY = "reut_avi_omer_links_v3";
+       const ADMIN_PASSWORD = "reut2025"; // סיסמה מעודכנת
+       const ADMIN_KEY = "admin_logged_in";
+       const WEDDING_DATE = new Date('2025-09-10');
+       
+               // Password protection for Day 1 button
+        const DAY1_PASSWORD = "AviGedalovitch1092025"; // סיסמה ליום 1
       
       let isAdminLoggedIn = false;
       let links = [];
@@ -924,11 +944,22 @@
         document.getElementById('toolbar').style.display = 'block';
       }
       
-      // Hide admin interface
-      function hideAdminInterface() {
-        document.getElementById('adminLogin').style.display = 'block';
-        document.getElementById('toolbar').style.display = 'none';
-      }
+             // Hide admin interface
+       function hideAdminInterface() {
+         document.getElementById('adminLogin').style.display = 'block';
+         document.getElementById('toolbar').style.display = 'none';
+       }
+       
+       // Check Day 1 password
+       function checkDay1Password() {
+         const password = prompt('🔐 הכנסי סיסמה ליום 1:');
+         if (password === DAY1_PASSWORD) {
+           return true;
+         } else {
+           alert('❌ סיסמה שגויה! אין גישה ליום 1.');
+           return false;
+         }
+       }
       
       function updateProgress() {
         if (!dataLoaded) return;
@@ -950,10 +981,17 @@
           const btn = document.createElement('button');
           const has = typeof links[i] === 'string' && links[i].trim().length>0;
           
-          btn.className = has ? 'day-button has-link' : 'day-button no-link';
-          btn.textContent = `יום ${i+1}`;
-          btn.dataset.haslink = has ? "true" : "false";
-          btn.title = has ? 'פתחי את הסרטון' : 'עדיין אין לינק ליום הזה';
+                     btn.className = has ? 'day-button has-link' : 'day-button no-link';
+           btn.textContent = `יום ${i+1}`;
+           btn.dataset.haslink = has ? "true" : "false";
+           btn.dataset.day = i + 1; // Add day number for CSS targeting
+           
+           // Special title for Day 1 (password protected)
+           if (i === 0) {
+             btn.title = has ? '🔐 פתחי את הסרטון (נדרשת סיסמה)' : '🔐 עדיין אין לינק ליום הזה (נדרשת סיסמה)';
+           } else {
+             btn.title = has ? 'פתחי את הסרטון' : 'עדיין אין לינק ליום הזה';
+           }
           
           // Add special styling for current day
           const today = new Date();
@@ -968,10 +1006,18 @@
             btn.style.color = 'white';
           }
           
-          btn.addEventListener('click', () => {
-            if (!has) return;
-            window.open(links[i], '_blank', 'noopener');
-          });
+                     btn.addEventListener('click', () => {
+             if (!has) return;
+             
+             // Special password protection for Day 1
+             if (i === 0) { // Day 1 (index 0)
+               if (!checkDay1Password()) {
+                 return; // Stop if password is wrong
+               }
+             }
+             
+             window.open(links[i], '_blank', 'noopener');
+           });
           
           grid.appendChild(btn);
         }
