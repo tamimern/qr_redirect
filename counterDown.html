@@ -1042,7 +1042,7 @@ const dateStr = `${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
 
 let buttonText = `יום ${i+1} - ${dateStr}`;
 if (has && customNames[i] && customNames[i].trim()) {
-  buttonText += ` - ${customNames[i]}`;
+  buttonText += ` ${customNames[i]}`;
 }
 
 btn.textContent = buttonText;
@@ -1167,7 +1167,7 @@ const customName = String(document.getElementById('customNameInput').value || ""
 customNames[day-1] = customName;
 
 // Save to localStorage as backup
-saveLinksToStorage(links);
+saveLinksToStorage(links, customNames);
 
 // Update Firebase with the new link and custom name
 updateFirebase(day, url, customName);
