@@ -825,20 +825,14 @@
       let links = [];
       let dataLoaded = false;
       
-      // Load data from JSON file
+      // Load data from localStorage first (since we're on GitHub Pages)
       async function loadDataFromFile() {
         try {
-          const response = await fetch(DATA_FILE);
-          if (response.ok) {
-            const data = await response.json();
-            links = data.video_links.map(item => item.url);
-            dataLoaded = true;
-            console.log('Data loaded from JSON file:', links);
-          } else {
-            throw new Error('Failed to load data file');
-          }
+          // On GitHub Pages, we can't write to files, so always use localStorage
+          console.log('GitHub Pages detected - using localStorage for data persistence');
+          loadLinksFromStorage();
         } catch (error) {
-          console.log('Loading from localStorage backup...');
+          console.log('Error in data loading, using defaults:', error);
           loadLinksFromStorage();
         }
       }
@@ -866,16 +860,6 @@
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
           console.log('Data saved to localStorage backup:', arr);
-        } catch (e) {
-          console.error('Error saving to localStorage:', e);
-        }
-      }
-      
-      // Save links to localStorage as backup
-      function saveLinksToStorage(arr) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-          console.log('Data saved to localStorage backup');
         } catch (e) {
           console.error('Error saving to localStorage:', e);
         }
@@ -1130,8 +1114,8 @@
        // Save to localStorage as backup
        saveLinksToStorage(links);
        
-       // Update the JSON data structure
-       updateDataFile(day, url);
+               // Note: On GitHub Pages, we can only save to localStorage
+        // The updateDataFile function would be used on a real server
        
        // Re-render to show the updated button
        render();
