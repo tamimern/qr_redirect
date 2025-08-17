@@ -699,8 +699,9 @@
       <h3 class="toolbar-title">🎬 כלי נוחות - הוספת סרטונים (מנהל בלבד)</h3>
       
       <div class="toolbar-inputs">
-        <input id="linkInput" type="url" class="toolbar-input" placeholder="הדביקי כאן לינק לסרטון (https://...)" />
+        <input id="linkInput" type="url" class="toolbar-input" placeholder="הדביקי כאן לינק לסרטון (https...)" />
         <input id="dayInput" type="number" min="1" max="29" class="toolbar-input" placeholder="יום (1–29)" />
+        <input id="customNameInput" type="text" class="toolbar-input" placeholder="שם הסרטון (אופציונלי)" />
       </div>
       
       <div class="toolbar-buttons">
@@ -838,9 +839,10 @@
             // Password protection for Day 1 button
             const DAY1_PASSWORD = "AviGedalovitch1092025"; // סיסמה ליום 1
       
-      let isAdminLoggedIn = false;
-      let links = [];
-      let dataLoaded = false;
+            let isAdminLoggedIn = false;
+            let links = [];
+            let customNames = []; // Array to store custom names for each day
+            let dataLoaded = false;
       
              // Load data from Firebase first, fallback to localStorage
        async function loadDataFromFirebase() {
@@ -1021,11 +1023,17 @@
                      btn.className = has ? 'day-button has-link' : 'day-button no-link';
                      // Calculate the date for this day (counting down from September 10th)
                      const weddingDate = new Date('2025-09-10');
-const dayDate = new Date(weddingDate);
+                     const dayDate = new Date(weddingDate);
+
 dayDate.setDate(weddingDate.getDate() - (i)); // Fixed: just subtract the day number
 const dateStr = `${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
 
-btn.textContent = `יום ${i+1} - ${dateStr}`;
+let buttonText = `יום ${i+1} - ${dateStr}`;
+if (has && customNames[i] && customNames[i].trim()) {
+  buttonText += ` - ${customNames[i]}`;
+}
+
+btn.textContent = buttonText;
            btn.dataset.haslink = has ? "true" : "false";
            btn.dataset.day = i + 1; // Add day number for CSS targeting
            
@@ -1124,7 +1132,8 @@ btn.textContent = `יום ${i+1} - ${dateStr}`;
        }
        
        const day = Number(dayInput.value);
-       const url = String(linkInput.value || "").trim();
+const url = String(linkInput.value || "").trim();
+const customName = String(document.getElementById('customNameInput').value || "").trim();
        
        if (!day || day < 1 || day > 29){ 
          alert('נא לבחור יום בין 1 ל‑29'); 
@@ -1140,19 +1149,23 @@ btn.textContent = `יום ${i+1} - ${dateStr}`;
        
        // Update the links array
        links[day-1] = url;
-       
-       // Save to localStorage as backup
-       saveLinksToStorage(links);
-       
-                               // Update Firebase with the new link
-         updateFirebase(day, url);
+
+// Update the custom names array
+customNames[day-1] = customName;
+
+// Save to localStorage as backup
+saveLinksToStorage(links);
+
+// Update Firebase with the new link and custom name
+updateFirebase(day, url, customName);
        
        // Re-render to show the updated button
        render();
        
        // Clear inputs
        linkInput.value = '';
-       dayInput.value = '';
+dayInput.value = '';
+document.getElementById('customNameInput').value = '';
        
        // Animate the saved button
        const savedButton = grid.children[day-1];
