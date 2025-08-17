@@ -730,8 +730,12 @@
     </div>
   </div>
 
+    <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  
   <script>
-     // Device detection and responsive classes
+      // Device detection and responsive classes
      function detectDevice() {
        const isMobile = window.innerWidth <= 768;
        const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
@@ -811,49 +815,98 @@
        /* יום 29 */ null
      ];
      
-           // Data management - Load from JSON file and save to localStorage as backup
-             const DATA_FILE = "data.json";
-       const STORAGE_KEY = "reut_avi_omer_links_v3";
-       const ADMIN_PASSWORD = "reut2025"; // סיסמה מעודכנת
-       const ADMIN_KEY = "admin_logged_in";
-       const WEDDING_DATE = new Date('2025-09-10');
-       
-               // Password protection for Day 1 button
-        const DAY1_PASSWORD = "AviGedalovitch1092025"; // סיסמה ליום 1
+                                   // Firebase configuration - Your actual Firebase config
+             const firebaseConfig = {
+               apiKey: "AIzaSyCC_3Y7B5zVpmgXt2iZUkSenNUWOl_f9xA",
+               authDomain: "gomer-countdown-reut-avi.firebaseapp.com",
+               projectId: "gomer-countdown-reut-avi",
+               storageBucket: "gomer-countdown-reut-avi.firebasestorage.app",
+               messagingSenderId: "486681310351",
+               appId: "1:486681310351:web:359f28ee2d2c8e5fa9ecfa"
+             };
+            
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            
+            // Data management - Firebase + localStorage backup
+            const STORAGE_KEY = "reut_avi_omer_links_v3";
+            const ADMIN_PASSWORD = "reut2025"; // סיסמה מעודכנת
+            const ADMIN_KEY = "admin_logged_in";
+            const WEDDING_DATE = new Date('2025-09-10');
+            
+            // Password protection for Day 1 button
+            const DAY1_PASSWORD = "AviGedalovitch1092025"; // סיסמה ליום 1
       
       let isAdminLoggedIn = false;
       let links = [];
       let dataLoaded = false;
       
-      // Load data from localStorage first (since we're on GitHub Pages)
-      async function loadDataFromFile() {
-        try {
-          // On GitHub Pages, we can't write to files, so always use localStorage
-          console.log('GitHub Pages detected - using localStorage for data persistence');
-          loadLinksFromStorage();
-        } catch (error) {
-          console.log('Error in data loading, using defaults:', error);
-          loadLinksFromStorage();
-        }
-      }
-      
-      // Load links from localStorage as backup
-      function loadLinksFromStorage() {
-        try {
-          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-          if (Array.isArray(saved) && saved.length === 29) {
-            links = saved;
-            console.log('Data loaded from localStorage backup:', links);
-          } else {
-            links = [...DEFAULT_LINKS];
-            console.log('Using default links:', links);
-          }
-        } catch (e) {
-          links = [...DEFAULT_LINKS];
-          console.log('Error loading from localStorage, using defaults:', links);
-        }
-        dataLoaded = true;
-      }
+             // Load data from Firebase first, fallback to localStorage
+       async function loadDataFromFirebase() {
+         try {
+           console.log('Attempting to load data from Firebase...');
+           
+           // Get the document from Firestore
+           const docRef = db.collection('omer_links').doc('main');
+           const doc = await docRef.get();
+           
+           if (doc.exists) {
+             const data = doc.data();
+             links = data.video_links || [...DEFAULT_LINKS];
+             dataLoaded = true;
+             console.log('✅ Data loaded from Firebase:', links);
+             
+             // Also save to localStorage as backup
+             saveLinksToStorage(links);
+           } else {
+             // Document doesn't exist, create it with default data
+             console.log('Creating new Firebase document with default data...');
+             await createDefaultFirebaseDocument();
+             links = [...DEFAULT_LINKS];
+             dataLoaded = true;
+           }
+         } catch (error) {
+           console.log('❌ Could not load from Firebase, using localStorage backup...', error);
+           loadLinksFromStorage();
+         }
+       }
+       
+       // Create default document in Firebase
+       async function createDefaultFirebaseDocument() {
+         try {
+           const defaultData = {
+             wedding_date: "2025-09-10",
+             last_updated: new Date().toISOString().split('T')[0],
+             video_links: DEFAULT_LINKS,
+             admin_password: "reut2025",
+             version: "1.0"
+           };
+           
+           await db.collection('omer_links').doc('main').set(defaultData);
+           console.log('✅ Default Firebase document created successfully!');
+         } catch (error) {
+           console.error('❌ Error creating default Firebase document:', error);
+         }
+       }
+       
+       // Load links from localStorage as backup
+       function loadLinksFromStorage() {
+         try {
+           const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+           if (Array.isArray(saved) && saved.length === 29) {
+             links = saved;
+             console.log('Data loaded from localStorage backup:', links);
+           } else {
+             links = [...DEFAULT_LINKS];
+             console.log('Using default links:', links);
+           }
+         } catch (e) {
+           links = [...DEFAULT_LINKS];
+           console.log('Error loading from localStorage, using defaults:', links);
+         }
+         dataLoaded = true;
+       }
       
       // Save links to localStorage as backup
       function saveLinksToStorage(arr) {
@@ -1009,13 +1062,13 @@
         updateDynamicContent(); // Update title and countdown after rendering
       }
       
-      // Initialize the website
-      async function initializeWebsite() {
-        await loadDataFromFile();
-        render();
-        checkAdminStatus();
-        updateDynamicContent();
-      }
+             // Initialize the website
+       async function initializeWebsite() {
+         await loadDataFromFirebase();
+         render();
+         checkAdminStatus();
+         updateDynamicContent();
+       }
       
             // Start the website when page loads
       if (document.readyState === 'loading') {
@@ -1024,63 +1077,34 @@
         initializeWebsite();
       }
       
-      // Function to update the data file (for admin use)
-      function updateDataFile(day, url) {
-        console.log(`Updating day ${day} with URL: ${url}`);
+      // Function to update Firebase with new link
+      async function updateFirebase(day, url) {
+        console.log(`Updating Firebase day ${day} with URL: ${url}`);
         
-        // Create downloadable updated data file
-        const updatedData = {
-          wedding_date: "2025-09-10",
-          last_updated: new Date().toISOString().split('T')[0],
-          video_links: links.map((link, index) => ({
-            day: index + 1,
-            url: link,
-            title: `יום ${index + 1}`,
-            added_date: link ? new Date().toISOString().split('T')[0] : null
-          })),
-          admin_password: "reut2025",
-          version: "1.0"
-        };
-        
-        // Create downloadable file
-        const dataStr = JSON.stringify(updatedData, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url2 = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url2;
-        link.download = 'updated_data.json';
-        link.textContent = '📥 Download Updated Data File';
-        link.style.display = 'block';
-        link.style.margin = '20px auto';
-        link.style.padding = '15px 25px';
-        link.style.backgroundColor = '#1a5f7a';
-        link.style.color = 'white';
-        link.style.textDecoration = 'none';
-        link.style.borderRadius = '10px';
-        link.style.textAlign = 'center';
-        link.style.maxWidth = '300px';
-        
-        // Add download link to the page temporarily
-        const container = document.querySelector('.container');
-        const existingLink = container.querySelector('a[download]');
-        if (existingLink) {
-          existingLink.remove();
+        try {
+          // Create the updated data structure
+          const updatedData = {
+            wedding_date: "2025-09-10",
+            last_updated: new Date().toISOString().split('T')[0],
+            video_links: links,
+            admin_password: "reut2025",
+            version: "1.0"
+          };
+          
+          // Update Firebase document
+          await db.collection('omer_links').doc('main').set(updatedData);
+          console.log('✅ Firebase updated successfully!');
+          
+          // Show success message
+          alert(`💾 Link saved for Day ${day} and synced to Firebase!`);
+          
+        } catch (error) {
+          console.error('❌ Error updating Firebase:', error);
+          
+          // Fallback: Show error but confirm local save
+          alert(`💾 Link saved locally for Day ${day}!\n\n❌ Could not sync to Firebase.\n\n✅ The link is saved in localStorage as backup.`);
         }
-        container.appendChild(link);
-        
-        // Remove after 10 seconds
-        setTimeout(() => {
-          if (link.parentNode) {
-            link.parentNode.removeChild(link);
-          }
-        }, 10000);
-        
-        // Also show a success message with instructions
-        setTimeout(() => {
-          alert(`💾 Link saved for Day ${day}!\n\n📥 A download link appeared above.\n\n🔧 To make it permanent:\n1. Download the file\n2. Replace your data.json with it\n3. Push to GitHub`);
-        }, 500);
       }
-      
       // סרגל עזר למעלה
      const linkInput = document.getElementById('linkInput');
      const dayInput  = document.getElementById('dayInput');
@@ -1114,8 +1138,8 @@
        // Save to localStorage as backup
        saveLinksToStorage(links);
        
-               // Note: On GitHub Pages, we can only save to localStorage
-        // The updateDataFile function would be used on a real server
+                               // Update Firebase with the new link
+         updateFirebase(day, url);
        
        // Re-render to show the updated button
        render();
