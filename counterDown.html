@@ -794,155 +794,255 @@
        /* יום 29 */ null
      ];
      
-     // נשמור בשני מקומות: localStorage (לנוחות) ובזיכרון ריצה
-     const STORAGE_KEY = "reut_avi_omer_links_v2";
-     const ADMIN_PASSWORD = "reut2024"; // סיסמה פשוטה - אפשר לשנות
-     const ADMIN_KEY = "admin_logged_in";
-     const WEDDING_DATE = new Date('2025-09-10');
-     
-     let isAdminLoggedIn = false;
-     
-     // Calculate days until wedding
-     function getDaysUntilWedding() {
-       const today = new Date();
-       const timeDiff = WEDDING_DATE.getTime() - today.getTime();
-       const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-       return Math.max(0, daysDiff);
-     }
-     
-     // Update dynamic title and countdown
-     function updateDynamicContent() {
-       const daysUntilWedding = getDaysUntilWedding();
-       const completedDays = links.filter(link => link !== null).length;
-       const remainingDays = 29 - completedDays;
-       
-       console.log('Debug - completedDays:', completedDays, 'remainingDays:', remainingDays);
-       
-       // Update page title - show remaining days to add videos
-       document.title = `ספירת "הגומר" לרעות ואבי - ${remainingDays} ימים נותרו להוספה`;
-       
-       // Update main title - show remaining days to add videos
-       const dynamicTitle = document.getElementById('dynamicTitle');
-       if (dynamicTitle) {
-         dynamicTitle.textContent = `ספירת "הגומר" לרעות ואבי - ${remainingDays} ימים נותרו להוספה`;
-       }
-     }
-     
-     // Check if admin is already logged in
-     function checkAdminStatus() {
-       const adminStatus = localStorage.getItem(ADMIN_KEY);
-       if (adminStatus === "true") {
-         isAdminLoggedIn = true;
-         showAdminInterface();
-       }
-     }
-     
-     // Login function
-     function loginAdmin() {
-       const password = document.getElementById('adminPassword').value;
-       if (password === ADMIN_PASSWORD) {
-         isAdminLoggedIn = true;
-         localStorage.setItem(ADMIN_KEY, "true");
-         showAdminInterface();
-         document.getElementById('adminPassword').value = '';
-       } else {
-         alert('❌ סיסמה שגויה! נסי שוב.');
-       }
-     }
-     
-     // Logout function
-     function logoutAdmin() {
-       isAdminLoggedIn = false;
-       localStorage.removeItem(ADMIN_KEY);
-       hideAdminInterface();
-     }
-     
-     // Show admin interface
-     function showAdminInterface() {
-       document.getElementById('adminLogin').style.display = 'none';
-       document.getElementById('toolbar').style.display = 'block';
-     }
-     
-     // Hide admin interface
-     function hideAdminInterface() {
-       document.getElementById('adminLogin').style.display = 'block';
-       document.getElementById('toolbar').style.display = 'none';
-     }
-     
-     function loadLinks(){
-       try{
-         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-         if (Array.isArray(saved) && saved.length === 29) return saved;
-       }catch(e){}
-       return [...DEFAULT_LINKS];
-     }
-     
-     function saveLinks(arr){
-       try{
-         localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-       }catch(e){}
-     }
-     
-     function updateProgress() {
-       const progressFill = document.getElementById('progressFill');
-       const completedDays = links.filter(link => link !== null).length;
-       const percentage = (completedDays / 29) * 100;
-       progressFill.style.width = percentage + '%';
-     }
-     
-     let links = loadLinks();
+           // Data management - Load from JSON file and save to localStorage as backup
+      const DATA_FILE = "data.json";
+      const STORAGE_KEY = "reut_avi_omer_links_v3";
+      const ADMIN_PASSWORD = "reut2025"; // סיסמה מעודכנת
+      const ADMIN_KEY = "admin_logged_in";
+      const WEDDING_DATE = new Date('2025-09-10');
+      
+      let isAdminLoggedIn = false;
+      let links = [];
+      let dataLoaded = false;
+      
+      // Load data from JSON file
+      async function loadDataFromFile() {
+        try {
+          const response = await fetch(DATA_FILE);
+          if (response.ok) {
+            const data = await response.json();
+            links = data.video_links.map(item => item.url);
+            dataLoaded = true;
+            console.log('Data loaded from JSON file:', links);
+          } else {
+            throw new Error('Failed to load data file');
+          }
+        } catch (error) {
+          console.log('Loading from localStorage backup...');
+          loadLinksFromStorage();
+        }
+      }
+      
+      // Load links from localStorage as backup
+      function loadLinksFromStorage() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+          if (Array.isArray(saved) && saved.length === 29) {
+            links = saved;
+            console.log('Data loaded from localStorage backup:', links);
+          } else {
+            links = [...DEFAULT_LINKS];
+            console.log('Using default links:', links);
+          }
+        } catch (e) {
+          links = [...DEFAULT_LINKS];
+          console.log('Error loading from localStorage, using defaults:', links);
+        }
+        dataLoaded = true;
+      }
+      
+      // Save links to localStorage as backup
+      function saveLinksToStorage(arr) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+          console.log('Data saved to localStorage backup');
+        } catch (e) {
+          console.error('Error saving to localStorage:', e);
+        }
+      }
+      
+      // Calculate days until wedding
+      function getDaysUntilWedding() {
+        const today = new Date();
+        const timeDiff = WEDDING_DATE.getTime() - today.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return Math.max(0, daysDiff);
+      }
+      
+      // Update dynamic title and countdown
+      function updateDynamicContent() {
+        if (!dataLoaded) return;
+        
+        const daysUntilWedding = getDaysUntilWedding();
+        const completedDays = links.filter(link => link !== null).length;
+        const remainingDays = 29 - completedDays;
+        
+        console.log('Debug - completedDays:', completedDays, 'remainingDays:', remainingDays);
+        
+        // Update page title - show remaining days to add videos
+        document.title = `ספירת "הגומר" לרעות ואבי - ${remainingDays} ימים נותרו להוספה`;
+        
+        // Update main title - show remaining days to add videos
+        const dynamicTitle = document.getElementById('dynamicTitle');
+        if (dynamicTitle) {
+          dynamicTitle.textContent = `ספירת "הגומר" לרעות ואבי - ${remainingDays} ימים נותרו להוספה`;
+        }
+      }
+      
+      // Check if admin is already logged in
+      function checkAdminStatus() {
+        const adminStatus = localStorage.getItem(ADMIN_KEY);
+        if (adminStatus === "true") {
+          isAdminLoggedIn = true;
+          showAdminInterface();
+        }
+      }
+      
+      // Login function
+      function loginAdmin() {
+        const password = document.getElementById('adminPassword').value;
+        if (password === ADMIN_PASSWORD) {
+          isAdminLoggedIn = true;
+          localStorage.setItem(ADMIN_KEY, "true");
+          showAdminInterface();
+          document.getElementById('adminPassword').value = '';
+        } else {
+          alert('❌ סיסמה שגויה! נסי שוב.');
+        }
+      }
+      
+      // Logout function
+      function logoutAdmin() {
+        isAdminLoggedIn = false;
+        localStorage.removeItem(ADMIN_KEY);
+        hideAdminInterface();
+      }
+      
+      // Show admin interface
+      function showAdminInterface() {
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('toolbar').style.display = 'block';
+      }
+      
+      // Hide admin interface
+      function hideAdminInterface() {
+        document.getElementById('adminLogin').style.display = 'block';
+        document.getElementById('toolbar').style.display = 'none';
+      }
+      
+      function updateProgress() {
+        if (!dataLoaded) return;
+        
+        const progressFill = document.getElementById('progressFill');
+        const completedDays = links.filter(link => link !== null).length;
+        const percentage = (completedDays / 29) * 100;
+        progressFill.style.width = percentage + '%';
+      }
      
      // בניית כפתורים
      const grid = document.getElementById('grid');
      
-     function render(){
-       grid.innerHTML = "";
-       for (let i=0;i<29;i++){
-         const btn = document.createElement('button');
-         const has = typeof links[i] === 'string' && links[i].trim().length>0;
-         
-         btn.className = has ? 'day-button has-link' : 'day-button no-link';
-         btn.textContent = `יום ${i+1}`;
-         btn.dataset.haslink = has ? "true" : "false";
-         btn.title = has ? 'פתחי את הסרטון' : 'עדיין אין לינק ליום הזה';
-         
-         // Add special styling for current day
-         const today = new Date();
-         const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-         const omerStart = 78; // Approximate start of Omer
-         const currentOmerDay = dayOfYear - omerStart + 1;
-         
-         if (i + 1 === currentOmerDay) {
-           btn.style.borderColor = '#f6ad55';
-           btn.style.boxShadow = '0 0 25px rgba(246, 173, 85, 0.6)';
-           btn.style.background = 'linear-gradient(135deg, #f6ad55, #f0933b)';
-           btn.style.color = 'white';
-         }
-         
-         btn.addEventListener('click', () => {
-           if (!has) return;
-           window.open(links[i], '_blank', 'noopener');
-         });
-         
-         grid.appendChild(btn);
-       }
-       updateProgress();
-       updateDynamicContent(); // Update title and countdown after rendering
-     }
-     
-     render();
-     
-     // Check admin status on page load
-     checkAdminStatus();
-     
-     // Wait for DOM to be fully loaded before updating dynamic content
-     if (document.readyState === 'loading') {
-       document.addEventListener('DOMContentLoaded', updateDynamicContent);
-     } else {
-       updateDynamicContent();
-     }
-     
-     // סרגל עזר למעלה
+           function render(){
+        if (!dataLoaded) return;
+        
+        grid.innerHTML = "";
+        for (let i=0;i<29;i++){
+          const btn = document.createElement('button');
+          const has = typeof links[i] === 'string' && links[i].trim().length>0;
+          
+          btn.className = has ? 'day-button has-link' : 'day-button no-link';
+          btn.textContent = `יום ${i+1}`;
+          btn.dataset.haslink = has ? "true" : "false";
+          btn.title = has ? 'פתחי את הסרטון' : 'עדיין אין לינק ליום הזה';
+          
+          // Add special styling for current day
+          const today = new Date();
+          const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+          const omerStart = 78; // Approximate start of Omer
+          const currentOmerDay = dayOfYear - omerStart + 1;
+          
+          if (i + 1 === currentOmerDay) {
+            btn.style.borderColor = '#f6ad55';
+            btn.style.boxShadow = '0 0 25px rgba(246, 173, 85, 0.6)';
+            btn.style.background = 'linear-gradient(135deg, #f6ad55, #f0933b)';
+            btn.style.color = 'white';
+          }
+          
+          btn.addEventListener('click', () => {
+            if (!has) return;
+            window.open(links[i], '_blank', 'noopener');
+          });
+          
+          grid.appendChild(btn);
+        }
+        updateProgress();
+        updateDynamicContent(); // Update title and countdown after rendering
+      }
+      
+      // Initialize the website
+      async function initializeWebsite() {
+        await loadDataFromFile();
+        render();
+        checkAdminStatus();
+        updateDynamicContent();
+      }
+      
+            // Start the website when page loads
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWebsite);
+      } else {
+        initializeWebsite();
+      }
+      
+      // Function to update the data file (for admin use)
+      function updateDataFile(day, url) {
+        // Note: In a real web environment, this would update the server file
+        // For now, we'll just log the update and save to localStorage
+        console.log(`Updating day ${day} with URL: ${url}`);
+        
+        // In a real implementation, you would send this to your server
+        // For GitHub Pages, you'll need to manually update the data.json file
+        // or use a service like Netlify Functions or GitHub Actions
+        
+        // For now, we'll create a downloadable updated data file
+        const updatedData = {
+          wedding_date: "2025-09-10",
+          last_updated: new Date().toISOString().split('T')[0],
+          video_links: links.map((link, index) => ({
+            day: index + 1,
+            url: link,
+            title: `יום ${index + 1}`,
+            added_date: link ? new Date().toISOString().split('T')[0] : null
+          })),
+          admin_password: "reut2025",
+          version: "1.0"
+        };
+        
+        // Create downloadable file
+        const dataStr = JSON.stringify(updatedData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url2 = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url2;
+        link.download = 'updated_data.json';
+        link.textContent = '📥 Download Updated Data File';
+        link.style.display = 'block';
+        link.style.margin = '20px auto';
+        link.style.padding = '15px 25px';
+        link.style.backgroundColor = '#1a5f7a';
+        link.style.color = 'white';
+        link.style.textDecoration = 'none';
+        link.style.borderRadius = '10px';
+        link.style.textAlign = 'center';
+        link.style.maxWidth = '300px';
+        
+        // Add download link to the page temporarily
+        const container = document.querySelector('.container');
+        const existingLink = container.querySelector('a[download]');
+        if (existingLink) {
+          existingLink.remove();
+        }
+        container.appendChild(link);
+        
+        // Remove after 10 seconds
+        setTimeout(() => {
+          if (link.parentNode) {
+            link.parentNode.removeChild(link);
+          }
+        }, 10000);
+      }
+      
+      // סרגל עזר למעלה
      const linkInput = document.getElementById('linkInput');
      const dayInput  = document.getElementById('dayInput');
      const saveBtn   = document.getElementById('saveBtn');
@@ -967,22 +1067,28 @@
          return; 
        }
        
-       links[day-1] = url;
-       saveLinks(links);
-       render();
-       
-       // Clear inputs and show success
-       linkInput.value = '';
-       dayInput.value = '';
-       
-       // Animate the saved button
-       const savedButton = grid.children[day-1];
-       savedButton.style.transform = 'scale(1.1)';
-       setTimeout(() => {
-         savedButton.style.transform = '';
-       }, 300);
-       
-       alert(`🎉 נשמר לינק ליום ${day}!`);
+               links[day-1] = url;
+        
+        // Save to localStorage as backup
+        saveLinksToStorage(links);
+        
+        // Update the JSON data structure
+        updateDataFile(day, url);
+        
+        render();
+        
+        // Clear inputs and show success
+        linkInput.value = '';
+        dayInput.value = '';
+        
+        // Animate the saved button
+        const savedButton = grid.children[day-1];
+        savedButton.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+          savedButton.style.transform = '';
+        }, 300);
+        
+        alert(`🎉 נשמר לינק ליום ${day}!`);
      });
      
      openBtn.addEventListener('click', () => {

@@ -1,6 +1,20 @@
+# qr_redirect
+
+# 🎯 **CLICK HERE TO OPEN THE ACTUAL OMER COUNTDOWN WEBSITE!**
+
+**[🌐 OPEN REUT & AVI'S OMER COUNTDOWN WEBSITE](counterDown.html)**
+
+---
+
 # Reut & Avi's Omer Countdown to the Wedding! 💕💍
 
-A **beautiful, romantic, and elegant** website for counting the Omer (Sefirat HaOmer) celebration leading up to Reut and Avi's wedding on September 10th, 2024.
+A **beautiful, romantic, and elegant** website for counting the Omer (Sefirat HaOmer) celebration leading up to Reut and Avi's wedding on September 10th, 2025.
+
+## 🚨 **IMPORTANT: This is just the README file!**
+
+**To see the actual beautiful Omer countdown website with all 29 day buttons, click the link above or go to:**
+- **Main Website:** [counterDown.html](counterDown.html)
+- **Direct Link:** [https://tamimern.github.io/qr_redirect/counterDown.html](https://tamimern.github.io/qr_redirect/counterDown.html)
 
 ## ✨ New Beautiful Features
 
